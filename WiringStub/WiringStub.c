@@ -1,17 +1,19 @@
 #include "WProgram.h"
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <sys/timeb.h>
+#include <time.h>
 
-struct timeb* start = NULL;
+struct __timeb32* start = NULL;
 
 int millis() {
 	if (start == NULL) {
-		start = malloc(sizeof(struct timeb));
+		start = malloc(sizeof(struct __timeb32));
 		ftime(start);
 	}
 
-	struct timeb end;
+	struct __timeb32 end;
 	ftime(&end);
 
 	return (int)(1000.0 * (end.time - start->time) + (end.millitm - start->millitm));
