@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2046
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ArduinoTasks", "ArduinoTasks\ArduinoTasks.vcxproj", "{5FEFBE58-E22C-467A-8741-7E82C12E74FE}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WindowsTest", "WindowsTest\WindowsTest.vcxproj", "{F27875B2-E668-4FD3-BCE6-B449C15C1319}"
+	ProjectSection(ProjectDependencies) = postProject
+		{5FEFBE58-E22C-467A-8741-7E82C12E74FE} = {5FEFBE58-E22C-467A-8741-7E82C12E74FE}
+		{385FE8EB-A767-4DDE-A1F9-BDFE9E134EBF} = {385FE8EB-A767-4DDE-A1F9-BDFE9E134EBF}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WiringStub", "WiringStub\WiringStub.vcxproj", "{385FE8EB-A767-4DDE-A1F9-BDFE9E134EBF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5FEFBE58-E22C-467A-8741-7E82C12E74FE}.Debug|x64.ActiveCfg = Debug|x64
+		{5FEFBE58-E22C-467A-8741-7E82C12E74FE}.Debug|x64.Build.0 = Debug|x64
+		{5FEFBE58-E22C-467A-8741-7E82C12E74FE}.Debug|x86.ActiveCfg = Debug|Win32
+		{5FEFBE58-E22C-467A-8741-7E82C12E74FE}.Debug|x86.Build.0 = Debug|Win32
+		{5FEFBE58-E22C-467A-8741-7E82C12E74FE}.Release|x64.ActiveCfg = Release|x64
+		{5FEFBE58-E22C-467A-8741-7E82C12E74FE}.Release|x64.Build.0 = Release|x64
+		{5FEFBE58-E22C-467A-8741-7E82C12E74FE}.Release|x86.ActiveCfg = Release|Win32
+		{5FEFBE58-E22C-467A-8741-7E82C12E74FE}.Release|x86.Build.0 = Release|Win32
+		{F27875B2-E668-4FD3-BCE6-B449C15C1319}.Debug|x64.ActiveCfg = Debug|x64
+		{F27875B2-E668-4FD3-BCE6-B449C15C1319}.Debug|x64.Build.0 = Debug|x64
+		{F27875B2-E668-4FD3-BCE6-B449C15C1319}.Debug|x86.ActiveCfg = Debug|Win32
+		{F27875B2-E668-4FD3-BCE6-B449C15C1319}.Debug|x86.Build.0 = Debug|Win32
+		{F27875B2-E668-4FD3-BCE6-B449C15C1319}.Release|x64.ActiveCfg = Release|x64
+		{F27875B2-E668-4FD3-BCE6-B449C15C1319}.Release|x64.Build.0 = Release|x64
+		{F27875B2-E668-4FD3-BCE6-B449C15C1319}.Release|x86.ActiveCfg = Release|Win32
+		{F27875B2-E668-4FD3-BCE6-B449C15C1319}.Release|x86.Build.0 = Release|Win32
+		{385FE8EB-A767-4DDE-A1F9-BDFE9E134EBF}.Debug|x64.ActiveCfg = Debug|x64
+		{385FE8EB-A767-4DDE-A1F9-BDFE9E134EBF}.Debug|x64.Build.0 = Debug|x64
+		{385FE8EB-A767-4DDE-A1F9-BDFE9E134EBF}.Debug|x86.ActiveCfg = Debug|Win32
+		{385FE8EB-A767-4DDE-A1F9-BDFE9E134EBF}.Debug|x86.Build.0 = Debug|Win32
+		{385FE8EB-A767-4DDE-A1F9-BDFE9E134EBF}.Release|x64.ActiveCfg = Release|x64
+		{385FE8EB-A767-4DDE-A1F9-BDFE9E134EBF}.Release|x64.Build.0 = Release|x64
+		{385FE8EB-A767-4DDE-A1F9-BDFE9E134EBF}.Release|x86.ActiveCfg = Release|Win32
+		{385FE8EB-A767-4DDE-A1F9-BDFE9E134EBF}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {04839D2C-C852-49E1-A842-F3C59BA91280}
+	EndGlobalSection
+EndGlobal
