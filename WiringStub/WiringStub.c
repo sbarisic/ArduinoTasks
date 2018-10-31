@@ -7,7 +7,7 @@
 
 struct __timeb32* start = NULL;
 
-int millis() {
+unsigned long millis() {
 	if (start == NULL) {
 		start = malloc(sizeof(struct __timeb32));
 		ftime(start);

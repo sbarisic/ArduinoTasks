@@ -1,149 +1,181 @@
 #include "WProgram.h"
-
 #include "ArduinoTasks.h"
 
-Task* CurTask;
-Task* Tasks[32];
+#include <stdio.h>
+//#define DBG_FUNC printf("%s\n", __func__)
+#define DBG_FUNC
 
-jmp_buf TaskScheduler;
+char UsedTasks[MAX_TASKS];
+Task TaskList[MAX_TASKS];
+Task* CurrentTask;
 
-static void* Temp;
-static char* OriginalTopOfStack;
-static char* TopOfStack;
-static int AllowedStackSize;
+void task_setup() {
+	DBG_FUNC;
 
-#define NUM_TASKS ((int)(sizeof(Tasks) / sizeof(*Tasks)))
-
-void task_init(void* TOS, int StackSize) {
 	size_t i;
 
-	for (i = 0; i < NUM_TASKS; i++)
-		Tasks[i] = NULL;
-
-	AllowedStackSize = StackSize;
-	OriginalTopOfStack = TopOfStack = TOS;
-	Temp = NULL;
-	CurTask = NULL;
+	for (i = 0; i < MAX_TASKS; i++) {
+		TaskList[i].TaskIndex = i;
+		task_destroy(&TaskList[i]);
+	}
 }
 
-int task_create(Task* T, TaskFunc F, void* Arg) {
-	int FreeTaskNum = -1;
+Task* task_find_free_child(Task* Root) {
+	DBG_FUNC;
+
+	if (Root->Children != NULL)
+		return task_find_free_child(Root->Children);
+
+	return Root;
+}
+
+void task_attach_child(Task* Root, Task* Child) {
+	DBG_FUNC;
+
+	Task* FreeChild = task_find_free_child(Root);
+	FreeChild->Children = Child;
+	Child->Parents = FreeChild;
+}
+
+void task_unlink(Task* T) {
+	Task* C = T->Children;
+	Task* P = T->Parents;
+
+	if (C != NULL)
+		C->Parents = P;
+
+	if (P != NULL)
+		P->Children = C;
+}
+
+void task_destroy_children(Task* Root) {
+	DBG_FUNC;
+
+	Task* Child = Root->Children;
+
+	if (Child != NULL) 
+		task_destroy_children(Child);
+
+	task_destroy(Root);
+}
+
+Task* task_create(TaskFunc Func, unsigned long Delay) {
+	DBG_FUNC;
+
 	size_t i;
 
-	for (i = 0; i < NUM_TASKS; i++) {
-		if (Tasks[i] == NULL) {
-			FreeTaskNum = i;
-			break;
+	for (i = 0; i < MAX_TASKS; i++) {
+		if (UsedTasks[i] == 0) {
+			UsedTasks[i] = 1;
+
+			Task* T = &TaskList[i];
+			task_delay_for(T, Delay);
+
+			T->Func = Func;
+			T->TaskIndex = i;
+
+			T->TriggerCount = 0;
+			T->MaxTriggerCount = 1;
+			T->LoopDelay = Delay;
+
+			T->TweenAmount = 100;
+			T->InvTweenAmount = 0;
+			T->LastTweenAmount = -1;
+
+			T->Paused = 0;
+			T->Children = NULL;
+
+			if (CurrentTask != NULL)
+				task_attach_child(CurrentTask, T);
+
+			return T;
 		}
 	}
 
-	if (FreeTaskNum == -1)
-		return 1;
-
-	Tasks[FreeTaskNum] = T;
-	T->NextRunTime = 0;
-	T->HasTaskStarted = 0;
-	T->Func = F;
-	T->TaskStartArg = Arg;
-
-	return 0;
+	return NULL;
 }
 
-int task_kill(Task* T) {
-	size_t i;
+Task* task_create_linear(TaskFunc Func, unsigned long Interval, unsigned long Steps) {
+	DBG_FUNC;
 
-	for (i = 0; i < NUM_TASKS; i++) {
-		if (Tasks[i] == T) {
-			Tasks[i] = NULL;
-			return 0;
-		}
-	}
-
-	return 1;
+	Task* T = task_create(Func, 0);
+	T->LoopDelay = Interval / Steps;
+	T->MaxTriggerCount = Steps;
+	return T;
 }
 
-Task* task_get_current() {
-	return CurTask;
-}
+Task* task_delay_for(Task* T, unsigned long Delay) {
+	DBG_FUNC;
 
-void task_yield() {
-	if (CurTask == NULL)
-		return;
-
-	if (setjmp(CurTask->TaskState))
-		return;
-
-	longjmp(TaskScheduler, 1);
-}
-
-void task_delay(int ms) {
-	if (CurTask == NULL)
-		return;
-
-	CurTask->NextRunTime = millis() + ms;
-	task_yield();
-}
-
-void task_internal_continue(Task* T) {
 	if (T == NULL)
-		return;
+		return NULL;
 
-	CurTask = T;
+	if (Delay == 0)
+		T->NextRunTime = 0;
+	else
+		T->NextRunTime = millis() + Delay;
 
-	if (setjmp(TaskScheduler))
-		return;
-
-	if (!T->HasTaskStarted) {
-		// Start Stack Hack
-		TopOfStack += -AllowedStackSize;
-		printf("Allocating stack, new offset %i\n", (int)(TopOfStack - OriginalTopOfStack));
-		char N[-(TopOfStack - (char*)&T)];
-		Temp = N;
-		// End Stack Hack
-
-		T->HasTaskStarted = 1;
-		T->Func(T->TaskStartArg);
-
-		TopOfStack -= -AllowedStackSize;
-		printf("Freeing stack, new offset %i\n", (int)(TopOfStack - OriginalTopOfStack));
-
-		CurTask = NULL;
-		task_kill(T);
-		return;
-	}
-
-	longjmp(T->TaskState, 1);
-	printf("UNREACHABLE CODE!\n");
-	return;
+	return T;
 }
 
-int task_get_active_count() {
-	int Active = 0;
+void task_destroy(Task* T) {
+	DBG_FUNC;
+
+	if (T == NULL || T->TaskIndex < 0)
+		return;
+
+	task_unlink(T);
+
+	if (CurrentTask == T)
+		CurrentTask = NULL;
+
+	if (T->Children != NULL)
+		task_destroy_children(T->Children);
+
+	UsedTasks[T->TaskIndex] = 0;
 	size_t i;
 
-	for (i = 0; i < NUM_TASKS; i++) {
-		if (Tasks[i] != NULL)
-			Active++;
-	}
+	for (i = 0; i < sizeof(Task); i++)
+		((char*)T)[i] = 0;
 
-	return Active;
+	T->TaskIndex = -1;
 }
 
-int task_step() {
-	int ExecutedAny = 0;
+Task* task_loop(Task* T, int Count) {
+	DBG_FUNC;
+
+	T->MaxTriggerCount = Count;
+	return T;
+}
+
+void task_step() {
 	size_t i;
 
+	for (i = 0; i < MAX_TASKS; i++) {
+		if (UsedTasks[i] && TaskList[i].NextRunTime <= millis()) {
+			CurrentTask = &TaskList[i];
 
+			if (!CurrentTask->Paused) {
+				if (CurrentTask->MaxTriggerCount == -1 || CurrentTask->TriggerCount < CurrentTask->MaxTriggerCount) {
+					if (CurrentTask->MaxTriggerCount != -1) {
+						CurrentTask->LastTweenAmount = CurrentTask->TweenAmount;
+						CurrentTask->TweenAmount = (int)((100.0f / CurrentTask->MaxTriggerCount) * (CurrentTask->TriggerCount + 1));
+						CurrentTask->InvTweenAmount = 100 - CurrentTask->TweenAmount;
+					} else
+						CurrentTask->LastTweenAmount = CurrentTask->TweenAmount = CurrentTask->InvTweenAmount = -1;
 
-	for (i = 0; i < NUM_TASKS; i++) {
-		if (Tasks[i] == NULL)
-			continue;
+					((TaskFunc)TaskList[i].Func)(CurrentTask);
 
-		if (Tasks[i]->NextRunTime <= millis()) {
-			ExecutedAny = 1;
-			task_internal_continue(Tasks[i]);
+					if (CurrentTask != NULL) {
+						CurrentTask->TriggerCount++;
+						CurrentTask->NextRunTime = millis() + (CurrentTask->LoopDelay + CurrentTask->NextDelayOffset);
+						CurrentTask->NextDelayOffset = 0;
+					}
+				} else
+					task_destroy(CurrentTask);
+			}
+
+			CurrentTask = NULL;
 		}
 	}
-
-	return ExecutedAny;
 }

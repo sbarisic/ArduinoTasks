@@ -3,31 +3,40 @@
 
 #include "WConstants.h"
 
-typedef void(*TaskFunc)(void* Arg);
+#define MAX_TASKS 6
 
-typedef struct {
-	int NextRunTime;
-	int HasTaskStarted;
+typedef struct TaskStruct {
+	int TaskIndex;
+	unsigned long NextRunTime;
 
-	jmp_buf TaskState;
+	int TriggerCount;
+	int MaxTriggerCount;
+	unsigned long LoopDelay;
+	int NextDelayOffset;
 
-	void* TaskStartArg;
-	TaskFunc Func;
+	int LastTweenAmount;
+	int TweenAmount;
+	int InvTweenAmount;
+
+	int Paused;
+
+	void* Func;
+	void* Userdata;
+
+	void* Parents;
+	void* Children;
 } Task;
 
-void task_init(void* TOS, int StackSize);
+typedef void(*TaskFunc)(Task* T);
 
-int task_create(Task* T, TaskFunc F, void* Arg);
-int task_kill(Task* T);
+void task_setup();
+void task_step();
 
-void task_yield();
-void task_delay(int ms);
+Task* task_create(TaskFunc Func, unsigned long Delay);
+Task* task_create_linear(TaskFunc Func, unsigned long Interval, unsigned long Steps);
+void task_destroy(Task* T);
 
-Task* task_get_current();
-
-int task_get_active_count();
-int task_step();
-
-// Schedules
+Task* task_delay_for(Task* T, unsigned long Delay);
+Task* task_loop(Task* T, int Count);
 
 #endif

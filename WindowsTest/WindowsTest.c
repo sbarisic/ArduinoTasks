@@ -3,41 +3,55 @@
 #include "WProgram.h"
 #include "ArduinoTasks.h"
 
+#include "Debug.h"
+
 #pragma comment(lib, "ArduinoTasks.lib")
 #pragma comment(lib, "WiringStub.lib")
 
-Task TaskA;
-Task TaskB;
-Task KillTask;
+#include <stdlib.h>
 
-void A(void* Arg) {
-	int i;
-	for (i = 0; i < 10; i++) {
-		printf("    A! (Arg = %i)\n", Arg);
-		task_delay(160);
-	}
+typedef struct {
+	int BlinkerPWM;
+	int BlinkerState;
+} BlinkerInfo;
+
+Task* TaskA;
+Task* TaskB;
+Task* TaskC;
+
+void C(Task* T) {
+	printf("----C\n");
+
+	if (T->TriggerCount >= 1)
+		task_destroy(TaskA);
 }
 
-void B(void* Arg) {
-	int i;
-	for (i = 0; i < 20; i++) {
-		printf("    B! (Arg = %i)\n", Arg);
-		task_delay(100);
-	}
+void B(Task* T) {
+	printf("--B\n");
+
+	TaskC = task_loop(task_create(C, 100), 3);
 }
 
+void A(Task* T) {
+	printf("A\n");
+
+	TaskB = task_loop(task_create(B, 500), 2);
+}
+
+void setup() {
+	task_setup();
+
+	TaskA = task_loop(task_create(A, 2000), 2);
+}
+
+void loop() {
+	task_step();
+}
 
 int main(int argc, const char** argv) {
-	int TopOfStack = 0;
-	task_init(&TopOfStack, 1024);
+	DebugInit();
+	setup();
 
-	task_create(&TaskA, A, 69);
-	task_create(&TaskB, B, 420);
-
-	while (task_get_active_count() > 0)
-		task_step();
-
-	printf("Done!\n");
 	while (1)
-		;
+		loop();
 }

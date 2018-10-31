@@ -2,5 +2,5 @@
 
 #include <setjmp.h>
 
-int millis();
+unsigned long millis();
 void delay(int ms);
